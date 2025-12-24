@@ -20,7 +20,7 @@ const connectDB = async () => {
 };
 connectDB();
 // ✅ CRON ENDPOINT (Vercel calls this)
-app.get("/cron/expire-tasks", async (req, res) => {
+app.get("/api/cron/expire-tasks", async (req, res) => {
   try {
     const result = await Task.updateMany(
       {
