@@ -6,22 +6,29 @@ const Task = require("./models/Task");
 const app = express();
 app.use(express.json());
 
-// MongoDB connection
-const connectDB = async () => {
-  try {
-    await mongoose.connect(
-      process.env.DB_URI
-      //"mongodb+srv://admin:10VToU0WupyAbo4M@majestic-escape.nk49u.mongodb.net/master-db?retryWrites=true&w=majority&appName=Majestic-Escape&authSource=admin"
-    );
-  } catch (err) {
-    console.error(`Error connecting to MongoDB: ${err.message}`);
-    process.exit(1); // Exit process with failure
-  }
-};
-connectDB();
-// ✅ CRON ENDPOINT (Vercel calls this)
+/**
+ * Connect to MongoDB (cached for serverless)
+ */
+let isConnected = false;
+
+async function connectDB() {
+  if (isConnected) return;
+
+  await mongoose.connect(process.env.DB_URI, {
+    bufferCommands: false,
+  });
+
+  isConnected = true;
+  console.log("MongoDB connected");
+}
+
+/**
+ * ✅ CRON ENDPOINT (Vercel calls this)
+ */
 app.get("/api/cron/expire-tasks", async (req, res) => {
   try {
+    await connectDB();
+
     const result = await Task.updateMany(
       {
         expiresAt: { $lt: new Date() },
@@ -31,19 +38,22 @@ app.get("/api/cron/expire-tasks", async (req, res) => {
     );
 
     console.log("Expired tasks:", result.modifiedCount);
-    res.status(200).send("Cron executed successfully");
+
+    return res.status(200).json({
+      success: true,
+      expired: result.modifiedCount,
+    });
   } catch (error) {
     console.error("Cron error:", error);
-    res.status(500).send("Cron failed");
+    return res.status(500).json({ error: "Cron failed" });
   }
 });
 
-// Test route
+/**
+ * Health check
+ */
 app.get("/", (req, res) => {
-  res.status(200).json({
-    status: "backend is live",
-    server: " Server is running",
-  });
+  res.status(200).json({ status: "backend is live" });
 });
 
 module.exports = app;
