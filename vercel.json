@@ -3,7 +3,7 @@
   "crons": [
     {
       "path": "/api/cron/expire-tasks",
-      "schedule": "12 9 * * *"
+      "schedule": "47 2 * * *"
     }
   ]
 }
