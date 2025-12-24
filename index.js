@@ -92,6 +92,29 @@ app.get("/api/cron/expire-tasks", async (req, res) => {
   }
 });
 
+app.get("/api/cron-ist/expire-tasks", async (req, res) => {
+  try {
+    await connectDB();
+
+    console.log("⏰ Cron triggered at:", new Date().toISOString());
+
+    const result = await Task.updateMany(
+      {
+        expiresAt: { $lt: new Date() },
+        status: "active",
+      },
+      { $set: { status: "expired" } }
+    );
+
+    return res.status(200).json({
+      success: true,
+      expired: result.modifiedCount,
+    });
+  } catch (err) {
+    console.error("Cron error:", err);
+    return res.status(500).json({ error: "Cron failed" });
+  }
+});
 // Health check
 app.get("/", (req, res) => {
   res.json({ status: "backend is live" });
