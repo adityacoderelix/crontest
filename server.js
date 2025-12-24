@@ -7,11 +7,18 @@ const app = express();
 app.use(express.json());
 
 // MongoDB connection
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB connected"))
-  .catch(console.error);
-
+const connectDB = async () => {
+  try {
+    await mongoose.connect(
+      process.env.DB_URI
+      //"mongodb+srv://admin:10VToU0WupyAbo4M@majestic-escape.nk49u.mongodb.net/master-db?retryWrites=true&w=majority&appName=Majestic-Escape&authSource=admin"
+    );
+  } catch (err) {
+    console.error(`Error connecting to MongoDB: ${err.message}`);
+    process.exit(1); // Exit process with failure
+  }
+};
+connectDB();
 // ✅ CRON ENDPOINT (Vercel calls this)
 app.get("/cron/expire-tasks", async (req, res) => {
   try {
@@ -33,7 +40,10 @@ app.get("/cron/expire-tasks", async (req, res) => {
 
 // Test route
 app.get("/", (req, res) => {
-  res.send("Server is running");
+  res.status(200).json({
+    status: "backend is live",
+    server: " Server is running",
+  });
 });
 
 module.exports = app;
